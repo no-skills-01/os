@@ -1,0 +1,42 @@
+ #define N 5
+ #define LEFT (i+N-1)%N
+ #define RIGHT (i+1)%N
+ #define THINKING 0
+ #define HUNGRY 1
+ #define EATING 0
+
+ int STATE[N];
+ semaphore mutex = 1;
+ semaphore S[N];
+
+ void philosopher(int i){
+    while(TRUE){
+        think()
+        take_fork(i)
+        eat()
+        putfork(i)
+    }
+ }
+
+ void take_fork(int i){
+    down(&mutex)
+    STATE[i]=HUNGRY;
+    test(i)
+    up(&mutes)
+    down(&s[i])
+ }
+
+ void put_fork(int i){
+    up(&mutex)
+    state[i]=THINKING
+    test(LEFT)
+    test(RIGHT)
+    up(&mutex)
+ }
+
+ void test(i){
+    if(STATE[i]==HUNGRY && STATE[LEFT]!=EATING && STATE[RIGHT]!=EATING){
+        STATE[i]=EATING
+        up(&s[i])
+    }
+ }
