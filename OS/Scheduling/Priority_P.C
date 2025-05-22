@@ -7,6 +7,18 @@ struct Process {
     int completed;
 };
 
+// 👇 Modularized timeline printer
+void printTimeline(int *Timeline, int time) {
+    printf("\nTimeline: ");
+    for (int i = 0; i < time; i++) {
+        if (Timeline[i] == -1)
+            printf("Idle ");
+        else
+            printf("%c ", Timeline[i] + 65);
+    }
+    printf("\n");
+}
+
 int main() {
     int n;
     printf("Enter number of processes: ");
@@ -25,7 +37,7 @@ int main() {
     }
 
     int time = 0, completed = 0;
-    int *Timeline = (int*)malloc((total_bt + 100) * sizeof(int));
+    int *Timeline = (int*)malloc((total_bt + 100) * sizeof(int)); // extra buffer
 
     while (completed < n) {
         int idx = -1, highestPriority = 9999;
@@ -55,15 +67,11 @@ int main() {
         time++;
     }
 
-    printf("\nTimeline: ");
-    for (int i = 0; i < time; i++) {
-        if (Timeline[i] == -1)
-            printf("Idle ");
-        else
-            printf("%c ", Timeline[i] + 65);
-    }
+    // 🔹 Print execution order (Gantt-style)
+    printTimeline(Timeline, time);
 
-    printf("\n\nPID\tAT\tBT\tP\tFT\tTT\tWT\n");
+    // 🔹 Print process table
+    printf("\nPID\tAT\tBT\tP\tFT\tTT\tWT\n");
     float avgtt = 0, avgwt = 0;
     for (int i = 0; i < n; i++) {
         printf("%c\t%d\t%d\t%d\t%d\t%d\t%d\n", i + 65, p[i].at, p[i].bt, p[i].priority,
@@ -72,8 +80,10 @@ int main() {
         avgwt += p[i].wt;
     }
 
+    // 🔹 Print averages
     printf("\nAverage Turnaround Time: %.2f\n", avgtt / n);
     printf("Average Waiting Time: %.2f\n", avgwt / n);
+
+    free(Timeline);
     return 0;
 }
-// This code implements a priority scheduling algorithm for processes.

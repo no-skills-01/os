@@ -1,10 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_TIME 1000  // A safe upper limit for timeline array
+
 struct Process {
     int pid, at, bt, ft, tt, wt, priority;
     int completed;
 };
+
+// Function to print the execution timeline
+void printTimeline(int *Timeline, int time) {
+    char ch;
+    printf("\nTimeline :\n");
+    for (int i = 0; i < time; i++) {
+        if (Timeline[i] == -1) {
+            printf("Idle  ");
+        } else {
+            ch = (char)(Timeline[i] + 65);
+            printf("%c  ", ch);
+        }
+    }
+    printf("\n\n");
+}
 
 int main() {
     int n;
@@ -20,6 +37,9 @@ int main() {
     }
 
     int time = 0, completed = 0;
+    int Timeline[MAX_TIME];  // Timeline of executed processes
+    int tIndex = 0;
+
     while (completed < n) {
         int idx = -1, highestPriority = 9999;
 
@@ -31,6 +51,11 @@ int main() {
         }
 
         if (idx != -1) {
+            // Add process ID to timeline for each time unit it runs
+            for (int j = 0; j < p[idx].bt; j++) {
+                Timeline[tIndex++] = p[idx].pid;
+            }
+
             time += p[idx].bt;
             p[idx].ft = time;
             p[idx].tt = p[idx].ft - p[idx].at;
@@ -38,11 +63,16 @@ int main() {
             p[idx].completed = 1;
             completed++;
         } else {
+            Timeline[tIndex++] = -1;  // CPU Idle
             time++;
         }
     }
 
-    printf("\nPID\tAT\tBT\tP\tFT\tTT\tWT\n");
+    // ✨ Print timeline (Gantt chart-like)
+    printTimeline(Timeline, tIndex);
+
+    // 📋 Output process stats
+    printf("PID\tAT\tBT\tP\tFT\tTT\tWT\n");
     float avgtt = 0, avgwt = 0;
     for (int i = 0; i < n; i++) {
         printf("%c\t%d\t%d\t%d\t%d\t%d\t%d\n", i + 65, p[i].at, p[i].bt, p[i].priority,
@@ -53,5 +83,6 @@ int main() {
 
     printf("\nAverage Turnaround Time: %.2f\n", avgtt / n);
     printf("Average Waiting Time: %.2f\n", avgwt / n);
+
     return 0;
 }

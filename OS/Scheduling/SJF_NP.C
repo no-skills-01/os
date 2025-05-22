@@ -1,131 +1,80 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
-#include <math.h>
-
-#define SIZE 100
 
 struct Process {
-    int pid;
-    int at;
-    int bt;
-    int rt;
-    int ft;
-    int wt;
-    int tt;
+    int pid, at, bt, ct, tat, wt;
 };
 
-
-void printTimeline(int *Timeline,int time){
-    char ch;
-    printf("Timeline : ");
-    for(int i=0;i<time;i++){
-        if(Timeline[i]==-1){
-            printf("Idle  ");
-            continue;
-        }
-        ch=(char)(Timeline[i]+65);
-        printf("%c  ",ch);
+// 🔹 Timeline printer
+void printTimeline(int Timeline[], int length) {
+    printf("\nTimeline: ");
+    for (int i = 0; i < length; i++) {
+        if (Timeline[i] == -1)
+            printf("Idle ");
+        else
+            printf("P%d ", Timeline[i]);
     }
-    printf("\n\n");
+    printf("\n");
 }
 
-int ShortestJob(Process *p,int *Queue,int *qptrb,int *qptre){
-    int min=INT_MAX;
-    int shortest;
-    int pid;
-    for(int i = *qptrb ; i<= *qptre ; i++){
-        if(p[Queue[i]].bt<min){
-            min=p[Queue[i]].bt;
-            pid=Queue[i];
-            shortest=i;
-        }
-    }
-    for(int i = shortest ; i < *qptre ; i++){
-        Queue[i] = Queue[i+1];
-    }
-    (*qptre)--;
-    
-    return pid;
-}
+void sjf_non_preemptive(struct Process p[], int n) {
+    int completed = 0, time = 0, min_bt, index;
+    int is_completed[n];
+    int Timeline[1000]; // large enough for most use cases
+    int timeline_index = 0;
 
-int main(){
-    printf("Enter number of processes\n");
-    int n;
-    scanf("%d",&n);
-    struct Process *p = (struct Process*)malloc(n*sizeof(struct Process));
-    int time=0;
-    for(int i=0;i<n;i++){
-        p[i].pid=i;
-        printf("Enter AT and BT of process %c\n",i+65);
-        scanf("%d %d",&p[i].at,&p[i].bt);
-        p[i].rt=p[i].bt;
-        time+=p[i].bt;
-    }
-    int *Queue = (int*)malloc(n*sizeof(int));
-    int *Timeline = (int*)malloc((time+100)*sizeof(int));
-    int executing=-1;
-    int completed=0;
-    int i=0;
-    int qptre=-1,qptrb=0;
+    for (int i = 0; i < n; i++)
+        is_completed[i] = 0; // Initially, no process is completed
 
-    while(completed<n){
-        //Add newly arrived process to Queue
-        for(int j=0;j<n;j++){
-            if(p[j].at==i){
-                Queue[++qptre]=p[j].pid;
+    while (completed < n) {
+        min_bt = 9999;
+        index = -1;
+
+        for (int i = 0; i < n; i++) {
+            if (p[i].at <= time && !is_completed[i] && p[i].bt < min_bt) {
+                min_bt = p[i].bt;
+                index = i;
             }
         }
 
-        if(executing==-1 && qptrb>qptre){
-            Timeline[i]=-1;
-            i++;
+        if (index == -1) {
+            Timeline[timeline_index++] = -1; // idle
+            time++;
             continue;
         }
 
-        if(executing==-1){
-            executing = ShortestJob(p,Queue,&qptrb,&qptre);
+        for (int t = 0; t < p[index].bt; t++) {
+            Timeline[timeline_index++] = p[index].pid; // store each unit of process execution
         }
 
-        p[executing].rt--;
-        Timeline[i]=executing;
-        i++;
-
-        if(p[executing].rt==0){
-            completed++;
-            p[executing].ft=i;
-            executing=-1;
-        }
-
+        p[index].ct = time + p[index].bt;
+        p[index].tat = p[index].ct - p[index].at;
+        p[index].wt = p[index].tat - p[index].bt;
+        time = p[index].ct;
+        is_completed[index] = 1;
+        completed++;
     }
 
-    printTimeline(Timeline,time);
+    printTimeline(Timeline, timeline_index); // ⬅️ Print Gantt-style chart
+}
 
-    float avgtt=0 , avgwt=0 ;
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
 
-    for(int i=0;i<n;i++){
-        p[i].tt=p[i].ft-p[i].at;
-        p[i].wt=p[i].tt-p[i].bt;
-        avgtt+=p[i].tt;
-        avgwt+=p[i].wt;
+    struct Process p[n];
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Enter Arrival Time & Burst Time for P%d: ", p[i].pid);
+        scanf("%d %d", &p[i].at, &p[i].bt);
     }
 
-    avgtt/=n;
-    avgwt/=n;
+    sjf_non_preemptive(p, n);
 
+    printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++)
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n", p[i].pid, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
 
-    printf("Final Outcome :\n\n");
-    printf("PID\tAT\tBT\tFT\tTT\tWT\n\n");
-
-    for(int i=0;i<n;i++){
-        printf("%d\t%d\t%d\t%d\t%d\t%d\n",p[i].pid,p[i].at,p[i].bt,p[i].ft,p[i].tt,p[i].wt);
-    }
-
-    printf("\n\nAverage Turnaround Time -> %f\nAverage Waiting Time -> %f",avgtt,avgwt);
-
-    printf("\n\nPress Enter to exit...\n");
-    getchar();
-    getchar();
-    
+    return 0;
 }
